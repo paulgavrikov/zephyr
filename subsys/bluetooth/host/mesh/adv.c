@@ -102,14 +102,17 @@ static inline void adv_send(struct net_buf *buf)
 	struct bt_data ad;
 	int err;
 
+	int count = (BT_MESH_ADV(buf)->count + 1);
+	
 	adv_int = max(adv_int_min, BT_MESH_ADV(buf)->adv_int);
 	duration = MESH_SCAN_WINDOW_MS +
-		   ((BT_MESH_ADV(buf)->count + 1) * (adv_int + 10));
-
+		   (count * (adv_int + 10));
+	   
+		   
 	BT_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
 	       buf->len, bt_hex(buf->data, buf->len));
 	BT_DBG("count %u interval %ums duration %ums",
-	       BT_MESH_ADV(buf)->count + 1, adv_int, duration);
+	       count, adv_int, duration);
 
 	ad.type = adv_type[BT_MESH_ADV(buf)->type];
 	ad.data_len = buf->len;
@@ -124,6 +127,8 @@ static inline void adv_send(struct net_buf *buf)
 	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
 
+	adv_mesh_set_count(count * 3); // all 3 channels
+	
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
 	net_buf_unref(buf);
 	adv_send_start(duration, err, cb, cb_data);
@@ -246,7 +251,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 		return;
 	}
 
-	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+	// BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	while (buf->len > 1) {
 		struct net_buf_simple_state state;

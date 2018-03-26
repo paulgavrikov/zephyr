@@ -349,6 +349,18 @@ static u8_t phy_rsp_send(struct connection *conn, struct pdu_data *pdu_data_rx);
 static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop);
 static void rx_fc_lock(u16_t handle);
 
+
+/*********
+* CUSTOM *
+*********/
+
+int adv_mesh_counter = -1;
+
+void adv_mesh_set_count(int counter) {
+	adv_mesh_counter = counter;
+}
+
+
 /*****************************************************************************
  *RADIO
  ****************************************************************************/
@@ -4536,7 +4548,7 @@ static void mayfly_radio_active(void *params)
 
 static void event_active(u32_t ticks_at_expire, u32_t remainder,
 			 u16_t lazy, void *context)
-{
+{	
 	static memq_link_t s_link;
 	static struct mayfly s_mfy_radio_active = {0, 0, &s_link, (void *)1,
 						   mayfly_radio_active};
@@ -5942,7 +5954,7 @@ void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 }
 
 static void adv_setup(void)
-{
+{	
 	struct pdu_adv *pdu;
 	u8_t bitmap;
 	u8_t chan;
@@ -6002,9 +6014,12 @@ static void adv_setup(void)
 		radio_switch_complete_and_rx(0);
 	} else {
 		_radio.state = STATE_CLOSE;
-		radio_switch_complete_and_disable();
+		if(adv_mesh_counter == -1 || adv_mesh_counter > 0) {
+			if(adv_mesh_counter != -1)
+				adv_mesh_counter--;
+			radio_switch_complete_and_disable();
+		}
 	}
-
 	bitmap = _radio.advertiser.chan_map_current;
 	chan = 0;
 	while ((bitmap & 0x01) == 0) {
@@ -6016,6 +6031,8 @@ static void adv_setup(void)
 
 	chan_set(37 + chan);
 }
+
+
 
 static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 		      u16_t lazy, void *context)
