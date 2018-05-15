@@ -186,7 +186,15 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 	/* NOTE: No whitening in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
 	radio_tmr_tifs_set(150);
+
+#if defined(CONFIG_SOC_NRF52840)
+	radio_tx_power_set(8);
+#elif defined(CONFIG_SOC_NRF52832) || defined(CONFIG_SOC_NRF51822)
+	radio_tx_power_set(4);
+#else
 	radio_tx_power_set(0);
+#endif
+
 	radio_freq_chan_set((chan << 1) + 2);
 	radio_aa_set((u8_t *)&test_sync_word);
 	radio_crc_configure(0x65b, 0x555555);

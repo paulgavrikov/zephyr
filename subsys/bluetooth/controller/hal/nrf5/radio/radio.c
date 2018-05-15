@@ -111,8 +111,25 @@ void radio_phy_set(u8_t phy, u8_t flags)
 
 void radio_tx_power_set(u32_t power)
 {
-	/* TODO map power to h/w values. */
-	NRF_RADIO->TXPOWER = power;
+	u32_t val = 0;
+	switch(power) {
+#if defined(CONFIG_SOC_NRF52840)
+		case 8: val = RADIO_TXPOWER_TXPOWER_Pos8dBm; break;
+		case 7: val = RADIO_TXPOWER_TXPOWER_Pos7dBm; break;
+		case 6: val = RADIO_TXPOWER_TXPOWER_Pos6dBm; break;
+		case 5: val = RADIO_TXPOWER_TXPOWER_Pos5dBm; break;
+#endif /* CONFIG_SOC_NRF52840 */
+		case 4: val = RADIO_TXPOWER_TXPOWER_Pos4dBm; break;
+#if !defined(CONFIG_SOC_SERIES_NRF51X)
+		case 3: val = RADIO_TXPOWER_TXPOWER_Pos3dBm; break;
+	#if defined(CONFIG_SOC_NRF52840)
+		case 2: val = RADIO_TXPOWER_TXPOWER_Pos2dBm; break;
+	#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_SOC_SERIES_NRF51X */
+		case 0: val = RADIO_TXPOWER_TXPOWER_0dBm; break;
+		default: val = RADIO_TXPOWER_TXPOWER_0dBm; break; // TODO: return error for unsupported values
+	}	
+	NRF_RADIO->TXPOWER = val;
 }
 
 void radio_freq_chan_set(u32_t chan)
